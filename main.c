@@ -6,7 +6,8 @@
 int main(void)
 {
     size_t layer_ns[3] = {2, 2, 1};
-    MLP* mlp = MLP_Initialize(3, 5, layer_ns);
-    MLP_Deinitialize(mlp);
+    printf("hello\n");
+    MLP* mlp = InitializeMLP(3, layer_ns);
+    DeinitializeMLP(mlp);
     return 0;
 }

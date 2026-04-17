@@ -1,48 +1,13 @@
 # `mlp.h`
-Single header library for creating and running MLPs on CPU, written completely in C.
+Single header library for creating and running all types of neural networks on CPU, written completely in C.
 
 The recommended way to use this library is to use it with the functions and types it provides, the functions in the library will not accomdate for any unintended behavior that may occur should the user differ from what is intended.
 
-## API Reference
-### Table of Contents
-Empty for now.
+## Links to API References
+- [`mlp.h`](docs/MLP.md)
+- [`rnn.h`](docs/RNN.md)
+- [`transformer.h`](docs/Transformer.md)
+- [`bigram.h`](docs/Bigram.md)
 
-### `MLP` Type
-The core type that stores everything an MLP needs to operate. All fields are `const`, preventing the tampering of the MLP to reduce potential edge cases. Below is the definition:
-
-```c
-typedef struct {
-    const size_t total_layers; // the amount of layers (input + hidden + output)
-    const size_t total_neurons; // the total amount of neurons everywhere
-    const size_t total_weights; // the total amount of weights
-    const size_t total_biases; // the total amount of biases
-    const size_t total_grads; // the total amount of gradients
-    const size_t * const layer_neurons; // the amount of neurons in each layer
-    // actual value stores
-    double * const values; // non activated weighted sum
-    double * const activated; // activated weighted sum
-    double * const grads;
-    double * const biases;
-    double * const weights;
-} MLP;
-```
-
-### `InitializeMLP()`
-**Parameters: `size_t total_layers, size_t *layer_neurons`**
-
-Initializes a `MLP` struct with the space allocated for weights, biases, activations, and weighted sums.
-
-### `DeinitializeMLP()`
-**Parameters: `MLP* mlp`**
-
-Frees the memory allocated when initializing the `MLP`.
-
-### `ForwardPass()`
-**Parameters: `double* input_values, size_t inputs, MLP* mlp`**
-
-Does a full forward pass on the model.
-
-### `ResetGrad()`
-**Parameters: `MLP* mlp`**
-
-Resets all the gradients to `0`, an often overlooked step when writing training code.
+## Roadmap
+The current agenda is to complete `mlp.h` first and refine it until it can do basic to intermediate levels of inference and training capabilites.

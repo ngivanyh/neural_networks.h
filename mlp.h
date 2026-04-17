@@ -30,6 +30,9 @@ void ForwardPass(double * input_values, size_t inputs, MLP * mlp);
 void BackwardPass(MLP * mlp);
 void ResetGrad(MLP * mlp);
 
+// helpher functions
+void * rand_alloc(int bytes);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
@@ -43,8 +46,9 @@ void ResetGrad(MLP * mlp)
     if (mlp == NULL)
         return;
 
-    for (size_t i = 0; i < mlp->total_grads; ++i)
-        mlp->grads[i] = 0;
+    double * grad_end = mlp->grads + mlp->total_grads;
+    for (double * grad = mlp->grads; grad < grad_end; ++grad)
+        *grad = 0;
 }
 
 void ForwardPass(double* input_values, size_t inputs, MLP * mlp)
@@ -97,8 +101,9 @@ MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
         return NULL;
 
     // allocate to a new layer_neurons so we can deinitialize safely every time
-    size_t* lns = malloc(total_layers * sizeof(size_t));
+    size_t * lns = (size_t *) malloc(total_layers * sizeof(size_t));
     if (lns == NULL) return NULL;
+
     // calculate neurons and allocate the layer neurons
     size_t total_neurons = 0;
     for (size_t * ln = lns; ln < lns + total_layers; ++ln)
@@ -119,11 +124,11 @@ MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
     size_t total_grads = total_weights + total_biases + total_neurons;
 
     // the actual value stores
-    double * values = calloc(total_neurons, sizeof(double));
-    double * activated = calloc(total_neurons, sizeof(double));
-    double * biases = calloc(total_biases, sizeof(double));
-    double * weights = calloc(total_weights, sizeof(double));
-    double * grads = calloc(total_grads, sizeof(double));
+    double * values = (double *) calloc(total_neurons, sizeof(double));
+    double * activated = (double *) calloc(total_neurons, sizeof(double));
+    double * biases = (double *) calloc(total_biases, sizeof(double));
+    double * weights = (double *) calloc(total_weights, sizeof(double));
+    double * grads = (double *) calloc(total_grads, sizeof(double));
 
     if (values == NULL || activated == NULL || grads == NULL || biases == NULL || weights == NULL)
     {
@@ -131,7 +136,7 @@ MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
         return NULL;
     }
 
-    MLP* mlp = malloc(sizeof(MLP));
+    MLP * mlp = (MLP *) malloc(sizeof(MLP));
     if (mlp == NULL) return NULL;
 
     // consts are annoying so we have to use a workaround
@@ -145,11 +150,11 @@ MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
         double * weights;
     } MutableMLP;
 
-    *((MutableMLP*) mlp) = (MutableMLP) {
+    *((MutableMLP *) mlp) = (MutableMLP) {
         .total_layers = total_layers,
         .total_neurons = total_neurons,
-        .total_biases = total_biases,
         .total_weights = total_weights,
+        .total_biases = total_biases,
         .total_grads = total_grads,
         .layer_neurons = lns,
         .values = values,

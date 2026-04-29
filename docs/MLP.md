@@ -30,7 +30,7 @@ Initializes a `MLP` struct with the space allocated for weights, biases, activat
 ## `DeinitializeMLP()`
 **Parameters: `MLP* mlp`**
 
-Frees the memory allocated when initializing the `MLP`.
+Frees the memory allocated when initializing the `MLP`. Meant to be paired with `InitializeMLP()` for safe `MLP` allocation/deallocation.
 
 ## `ForwardPass()`
 **Parameters: `double* input_values, size_t inputs, MLP* mlp`**
@@ -40,4 +40,4 @@ Does a full forward pass on the model.
 ## `ResetGrad()`
 **Parameters: `MLP* mlp`**
 
-Resets all the gradients to `0`, an often overlooked step when writing training code.
+Resets all the gradients to 0.

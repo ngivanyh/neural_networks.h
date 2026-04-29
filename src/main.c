@@ -1,6 +1,4 @@
-#define MLP_IMPLEMENTATION
-
-#include "mlp.h"
+#include "mlp/mlp.h"
 #include <stdio.h>
 
 int main(void)

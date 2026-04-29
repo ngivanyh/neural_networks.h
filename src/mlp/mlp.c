@@ -1,54 +1,13 @@
-#ifndef INCLUDE_MLP
-#define INCLUDE_MLP // prevent repeated includes, causing errors
+#include "mlp.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-#include <stdlib.h>
-
-// The MLP type
-typedef struct {
-    const size_t total_layers; // the amount of layers (input + hidden + output)
-    const size_t total_neurons; // the total amount of neurons everywhere
-    const size_t total_weights; // the total amount of weights
-    const size_t total_biases; // the total amount of biases
-    const size_t total_grads; // the total amount of gradients
-    const size_t * const layer_neurons; // the amount of neurons in each layer
-    // actual value stores
-    double * const values; // non activated weighted sum
-    double * const activated; // activated weighted sum
-    double * const grads;
-    double * const biases;
-    double * const weights;
-} MLP;
-
-MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons);
-void DeinitializeMLP(MLP * mlp);
-
-void ForwardPass(double * input_values, size_t inputs, MLP * mlp);
-void BackwardPass(MLP * mlp);
-void ResetGrad(MLP * mlp);
-
-// helpher functions
-void * rand_alloc(int bytes);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif // INCLUDE_MLP
-
-// MLP implementation
-#ifdef MLP_IMPLEMENTATION
 void ResetGrad(MLP * mlp)
 {
     if (mlp == NULL)
         return;
 
-    double * grad_end = mlp->grads + mlp->total_grads;
-    for (double * grad = mlp->grads; grad < grad_end; ++grad)
-        *grad = 0;
+    double * grad = mlp->grads;
+    for (size_t i = 0; i < mlp->total_grads; ++i)
+        *grad++ = 0;
 }
 
 void ForwardPass(double* input_values, size_t inputs, MLP * mlp)
@@ -88,7 +47,7 @@ void ForwardPass(double* input_values, size_t inputs, MLP * mlp)
             weighted_sum += mlp->biases[prev_neuron_offset + j];
 
             mlp->values[cur_neuron_idx] = weighted_sum;
-            mlp->activated[cur_neuron_idx] = (weighted_sum < 0) ? 0.0 : weighted_sum;
+            mlp->activated[cur_neuron_idx] = (weighted_sum < 0) ? 0.0 : weighted_sum; // ReLU
         }
 
         neuron_offset += cur_layer_neurons;
@@ -177,4 +136,3 @@ void DeinitializeMLP(MLP *mlp)
     free((void *) mlp->weights);
     free((void *) mlp);
 }
-#endif // MLP_IMPLEMENTATION

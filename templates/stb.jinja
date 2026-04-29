@@ -1,0 +1,16 @@
+#ifndef INCLUDE_{{ name }}
+#define INCLUDE_{{ name }} // prevent repeated includes, causing errors
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // INCLUDE_{{ name }}
+
+// {{ name }} implementation
+#ifdef {{ name }}_IMPLEMENTATION
+#endif

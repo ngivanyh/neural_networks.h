@@ -17,9 +17,14 @@ typedef struct {
     double * const weights;
 } MLP;
 
-MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons);
-void DeinitializeMLP(MLP * mlp);
+// typedef union MLP_INIT_RETURNS {
+//     int return_code;
+//     MLP * mlp;
+// } MLP_INIT_RETURNS;
 
-void ForwardPass(double * input_values, size_t inputs, MLP * mlp);
+MLP * InitializeMLP(size_t total_layers, size_t * layer_neurons);
+NN_RETURN_CODES DeinitializeMLP(MLP * mlp);
+
+NN_RETURN_CODES ForwardPass(double * input_values, size_t inputs, MLP * mlp);
 void BackwardPass(MLP * mlp);
-void ResetGrad(MLP * mlp);
+NN_RETURN_CODES ResetGrad(MLP * mlp);

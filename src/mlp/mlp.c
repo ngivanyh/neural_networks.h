@@ -1,24 +1,25 @@
 #include "mlp.h"
+#include <stdlib.h>
 
-void ResetGrad(MLP * mlp)
+NN_RETURN_CODES ResetGrad(MLP * mlp)
 {
-    if (mlp == NULL)
-        return;
+    if (mlp == NULL) return NN_RETURN_ERROR_NULLPTR;
 
     double * grad = mlp->grads;
-    for (size_t i = 0; i < mlp->total_grads; ++i)
-        *grad++ = 0;
+    double * grad_end = grad + mlp->total_grads;
+    for (; grad < grad_end; ++grad)
+        *grad = 0;
+
+    return NN_RETURN_SUCCESS;
 }
 
-void ForwardPass(double* input_values, size_t inputs, MLP * mlp)
+NN_RETURN_CODES ForwardPass(double* input_values, size_t inputs, MLP * mlp)
 {
-    if (mlp == NULL)
-        return;
+    if (mlp == NULL) return NN_RETURN_ERROR_NULLPTR;
 
     const size_t layer1_neurons = *(mlp->layer_neurons);
 
-    if (inputs != layer1_neurons)
-        return;
+    if (inputs != layer1_neurons) return NN_RETURN_ERROR_INVALID_ARGUMENTS;
 
     // set the static (unchanged) values into activated and values
     for (size_t i = 0; i < layer1_neurons; ++i)
@@ -27,37 +28,42 @@ void ForwardPass(double* input_values, size_t inputs, MLP * mlp)
         mlp->activated[i] = input_values[i];
     }
 
-    for (
-        size_t i = 1, weight_offset = 0, neuron_offset = layer1_neurons;
-        i < mlp->total_layers;
-        ++i
-    )
+    double * cur_val = mlp->values + layer1_neurons;
+    double * cur_act = mlp->activated + layer1_neurons;
+    double * cur_w = mlp->weights;
+    double * cur_b = mlp->biases;
+    double * prev_act = mlp->activated;
+    size_t * cur_layer = (size_t *) mlp->layer_neurons + 1;
+
+    for (; cur_layer < mlp->layer_neurons + mlp->total_layers; ++cur_layer)
     {
-        size_t cur_layer_neurons = mlp->layer_neurons[i];
-        size_t prev_layer_neurons = mlp->layer_neurons[i - 1];
+        size_t cur_layer_neurons = *cur_layer;
+        size_t prev_layer_neurons = *(cur_layer - 1);
+        double * cur_layer_end = cur_val + cur_layer_neurons;
 
-        for (size_t j = 0; j < cur_layer_neurons; ++j, weight_offset += prev_layer_neurons)
+        for (; cur_val < cur_layer_end; ++cur_val, ++cur_act, ++cur_b)
         {
-            size_t cur_neuron_idx = neuron_offset + j;
-            size_t prev_neuron_offset = neuron_offset - prev_layer_neurons;
-
             double weighted_sum = 0.0;
-            for (size_t k = 0; k < prev_layer_neurons; ++k)
-                weighted_sum += mlp->activated[prev_neuron_offset + k] * mlp->weights[weight_offset + k];
-            weighted_sum += mlp->biases[prev_neuron_offset + j];
 
-            mlp->values[cur_neuron_idx] = weighted_sum;
-            mlp->activated[cur_neuron_idx] = (weighted_sum < 0) ? 0.0 : weighted_sum; // ReLU
+            double * prev_act_end = prev_act + prev_layer_neurons;
+            for (; prev_act < prev_act_end; ++prev_act, ++cur_w)
+                weighted_sum += *prev_act * *cur_w;
+            prev_act -= prev_layer_neurons;
+            weighted_sum += *cur_b;
+
+            *cur_val = weighted_sum;
+            *cur_act = (weighted_sum < 0) ? 0 : weighted_sum; // ReLU
         }
 
-        neuron_offset += cur_layer_neurons;
+        prev_act += prev_layer_neurons;
     }
+
+    return NN_RETURN_SUCCESS;
 }
 
-MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
+MLP * InitializeMLP(size_t total_layers, size_t * layer_neurons)
 {
-    if (layer_neurons == NULL)
-        return NULL;
+    if (layer_neurons == NULL) return NULL;
 
     // allocate to a new layer_neurons so we can deinitialize safely every time
     size_t * lns = (size_t *) malloc(total_layers * sizeof(size_t));
@@ -76,24 +82,27 @@ MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
 
     // weight calculation
     size_t total_weights = 0;
-    for (size_t* ln = lns + 1; ln < lns + total_layers; ++ln)
-        total_weights += *ln * *(ln - 1);
+    for (size_t * ln = lns + 1; ln < lns + total_layers; ++ln)
+        total_weights += *ln * *(ln - 1); // lots and lots of *'s :)
 
     // grad calculation
     size_t total_grads = total_weights + total_biases + total_neurons;
 
     // the actual value stores
     double * values = (double *) calloc(total_neurons, sizeof(double));
-    double * activated = (double *) calloc(total_neurons, sizeof(double));
-    double * biases = (double *) calloc(total_biases, sizeof(double));
-    double * weights = (double *) calloc(total_weights, sizeof(double));
-    double * grads = (double *) calloc(total_grads, sizeof(double));
+    if (values == NULL) goto cleanup;
 
-    if (values == NULL || activated == NULL || grads == NULL || biases == NULL || weights == NULL)
-    {
-        free(lns);
-        return NULL;
-    }
+    double * activated = (double *) calloc(total_neurons, sizeof(double));
+    if (activated == NULL) goto cleanup;
+
+    double * grads = (double *) calloc(total_grads, sizeof(double));
+    if (grads == NULL) goto cleanup;
+
+    double * biases = (double *) calloc(total_biases, sizeof(double));
+    if (biases == NULL) goto cleanup;
+
+    double * weights = (double *) calloc(total_weights, sizeof(double));
+    if (weights == NULL) goto cleanup;
 
     MLP * mlp = (MLP *) malloc(sizeof(MLP));
     if (mlp == NULL) return NULL;
@@ -124,10 +133,30 @@ MLP* InitializeMLP(size_t total_layers, size_t * layer_neurons)
     };
 
     return mlp;
+
+cleanup:
+    free((void *) lns);
+    free((void *) values);
+    free((void *) activated);
+    free((void *) grads);
+    free((void *) biases);
+    free((void *) weights);
+    return NULL;
 }
 
-void DeinitializeMLP(MLP *mlp)
+NN_RETURN_CODES DeinitializeMLP(MLP * mlp)
 {
+    if (mlp == NULL) return NN_RETURN_ERROR_NULLPTR;
+
+    if (
+        mlp->layer_neurons == NULL
+        || mlp->values == NULL
+        || mlp->activated == NULL
+        || mlp->grads == NULL
+        || mlp->biases == NULL
+        || mlp->weights == NULL
+    ) return NN_RETURN_ERROR_NULLPTR;
+
     free((void *) mlp->layer_neurons);
     free((void *) mlp->values);
     free((void *) mlp->activated);
@@ -135,4 +164,6 @@ void DeinitializeMLP(MLP *mlp)
     free((void *) mlp->biases);
     free((void *) mlp->weights);
     free((void *) mlp);
+
+    return NN_RETURN_SUCCESS;
 }

@@ -3,7 +3,7 @@
 Empty for now.
 
 ## `MLP` Type
-The core type that stores everything an MLP needs to operate. All fields are `const`, preventing the tampering of the MLP to reduce potential edge cases. Below is the definition:
+The core type that stores everything an MLP[^1] needs to operate. All fields are `const`, preventing the tampering of the MLP to reduce potential edge cases. Below is the definition:
 
 ```c
 typedef struct {
@@ -41,3 +41,5 @@ Does a full forward pass on the model.
 **Parameters: `MLP* mlp`**
 
 Resets all the gradients to 0.
+
+[^1]: The current MLP implementation uses ReLU as its activation function

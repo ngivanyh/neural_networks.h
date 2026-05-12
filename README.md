@@ -11,3 +11,27 @@ The recommended way to use this library is to use it with the functions and type
 
 ## Roadmap
 The current agenda is to complete `mlp.h` first and refine it until it can do basic to intermediate levels of inference and training capabilites. Then in order `bigram.h`, `rnn.h`, and finally `transformer.h`.
+
+## Helper API Reference
+
+### `NN_RETURN_CODES`
+
+```c
+typedef enum NN_RETURN_CODES {
+    NN_RETURN_SUCCESS,
+    NN_RETURN_ERROR_NULLPTR,
+    NN_RETURN_ERROR_INVALID_ARGUMENTS,
+    NN_RETURN_ERROR_ALLOC_UNSUCCESSFUL
+} NN_RETURN_CODES;
+```
+
+An `enum` of return codes for all library functions.
+
+### Activation Functions
+`float` receiving and returning activation functions.
+
+#### Supported Activation Functions
+- `ReLU`
+- `Tanh`
+- `Sigmoid`
+- `Softmax` (Receives `float *`, `size_t` length, and an index; returns the softmax value at that index)
